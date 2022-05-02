@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>
+			WebSocket Chat
+		</title>
+
+		<style>
+			.floatRight {
+				right: 0;
+				float: right;
+			}
+		</style>
+	</head>
+
+	<body>
+		<input id='messageInput'/>
+		<button id='messageButton'>
+			Message
+		</button>
+		<button id='whisperButton'>
+			Whisper
+		</button>
+
+		<div class='floatRight'>
+			<button id='loginButton'>
+				Login
+			</button>
+			<button id='logoutButton'>
+				Logout
+			</button>
+			<button id='createButton'>
+				Create
+			</button>
+			<button id='removeButton'>
+				Remove
+			</button>
+
+			<br/>
+
+			<span id='accountDisplay'>
+				Not logged in
+			</span>
+		</div>
+
+		<br/>
+
+		<span id='chatDisplay'></span>
+
+		<script>
+			const messageInput = document.querySelector('#messageInput');
+			const messageButton = document.querySelector('#messageButton');
+			const whisperButton = document.querySelector('#whisperButton');
+			const chatDisplay = document.querySelector('#chatDisplay');
+			const accountDisplay = document.querySelector('#accountDisplay');
+			const loginButton = document.querySelector('#loginButton');
+			const logoutButton = document.querySelector('#logoutButton');
+			const createButton = document.querySelector('#createButton');
+			const removeButton = document.querySelector('#removeButton');
+
+
+			const socket = new WebSocket('wss://' + location.host);
+
+			const send = (type, message = {}) => socket.send(JSON.stringify({ ...message, type }));
+			const login = (username, password) => send('login', { username, password });
+			const logout = () => send('logout');
+			const create = (username, password) => send('create', { username, password });
+			const remove = (username, password) => send('remove', { username, password });
+			const message = (message) => send('message', { message });
+			const whisper = (message, recipients) => send('whisper', { message, recipients });
+
+			socket.addEventListener('open', () => console.log('connected'));
+			socket.addEventListener('close', () => console.log('disconnected'));
+			socket.addEventListener('message', ({ data }) => {
+				const { error, type, username, message, sender } = JSON.parse(data);
+
+				if (error) {
+					console.error(error);
+					alert(error);
+					return;
+				}
+
+				switch (type) {
+					case 'login':
+						console.log('Logged in as', username, id);
+						accountDisplay.innerText = `Logged in as ${username}`;
+						break;
+
+					case 'logout':
+						console.log('Logged out from', username);
+						accountDisplay.innerText = 'Not logged in';
+						document.cookie = '';
+						break;
+
+					case 'create':
+						console.log('Created account', username);
+						break;
+
+					case 'remove':
+						console.log('Removed account', username);
+						break;
+
+					case 'message':
+						console.log(sender, 'says:', message);
+						chatDisplay.innerText = `${sender} says: ${message}\n${chatDisplay.innerText}`;
+						break;
+
+					case 'whisper':
+						console.log(sender, 'whispers:', message);
+						chatDisplay.innerText = `${sender} whispers: ${message}\n${chatDisplay.innerText}`;
+						break;
+				}
+			});
+
+
+			messageInput.addEventListener('keydown', ({ code }) => {
+				if (code === 'Enter')
+					messageButton.dispatchEvent(new Event('click'));
+			});
+
+			messageButton.addEventListener('click', () => {
+				if (messageInput.value)
+					message(messageInput.value);
+				messageInput.value = '';
+			});
+
+			whisperButton.addEventListener('click', () => {
+				if (messageInput.value)
+					whisper(messageInput.value, prompt('Comma-separated list of recipients:')?.split(','));
+				messageInput.value = '';
+			});
+
+			loginButton.addEventListener('click', () => login(prompt('Username:'), prompt('Password:')));
+			logoutButton.addEventListener('click', () => logout());
+			createButton.addEventListener('click', () => create(prompt('Username:'), prompt('Password:')));
+			removeButton.addEventListener('click', () => remove(prompt('Username:'), prompt('Password:')));
+		</script>
+	</body>
+</html>

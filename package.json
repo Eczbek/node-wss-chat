@@ -1,0 +1,11 @@
+{
+	"type": "module",
+	"scripts": {
+		"cert": "openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -x509 -nodes -days 365 -subj '/CN=localhost' -out cert.pem -keyout cert.pem"
+	},
+	"dependencies": {
+		"bcrypt": "^5.0.1",
+		"better-sqlite3": "^7.5.1",
+		"ws": "^8.6.0"
+	}
+}
